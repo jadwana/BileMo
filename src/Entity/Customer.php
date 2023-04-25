@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\CustomerRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -29,6 +31,14 @@ class Customer implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 255)]
     private ?string $name = null;
+
+    #[ORM\OneToMany(mappedBy: 'customer', targetEntity: User::class, orphanRemoval: true)]
+    private Collection $user;
+
+    public function __construct()
+    {
+        $this->user = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -118,5 +128,35 @@ class Customer implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getUsername(): string {
         return $this->getUserIdentifier();
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getUser(): Collection
+    {
+        return $this->user;
+    }
+
+    public function addUser(User $user): self
+    {
+        if (!$this->user->contains($user)) {
+            $this->user->add($user);
+            $user->setCustomer($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUser(User $user): self
+    {
+        if ($this->user->removeElement($user)) {
+            // set the owning side to null (unless already changed)
+            if ($user->getCustomer() === $this) {
+                $user->setCustomer(null);
+            }
+        }
+
+        return $this;
     }
 }
