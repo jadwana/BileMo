@@ -35,13 +35,18 @@ class AppFixtures extends Fixture
             $manager->persist($product);
         }
 
-        // Creation of customer
-        $customer = new Customer();
-        $customer->setEmail("customer@mail.com");
-        $customer->setRoles(["ROLE_USER"]);
-        $customer->setPassword($this->PasswordHasher->hashPassword($customer, "password"));
-        $customer->setname("Le Client");
-        $manager->persist($customer);
+        // Creation of customers
+        $listCustomer = [];
+        for ($i = 0; $i < 5; $i++){
+            $customer = new Customer();
+            $customer->setEmail("customer".$i ."@mail.com");
+            $customer->setRoles(["ROLE_CLIENT"]);
+            $customer->setPassword($this->PasswordHasher->hashPassword($customer, "password"));
+            $customer->setname("Le Client_" .$i);
+            $manager->persist($customer);
+            $listCustomer[] = $customer;
+        }
+
 
         // Creation of users
         for ($i = 0; $i < 30; ++$i) {
@@ -50,7 +55,7 @@ class AppFixtures extends Fixture
             $user->setUsername($faker->username());
             $hash = password_hash('123456', PASSWORD_BCRYPT);
             $user->setPassword($hash); 
-            $user->setCustomer($customer);
+            $user->setCustomer($listCustomer[array_rand($listCustomer)]);
             $manager->persist($user);
         }
 
