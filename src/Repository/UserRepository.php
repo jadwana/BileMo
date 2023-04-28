@@ -39,6 +39,40 @@ class UserRepository extends ServiceEntityRepository
         }
     }
 
+    /**
+     * This method Returns $limit users from page $offset
+     *
+     * @param integer $offset
+     * @param integer $limit
+     * @return void
+     */
+    public function findByCustomerIdWithPagination($customerId, $offset, $limit) {
+        $qb = $this->createQueryBuilder('u')
+            ->where('u.customer = :customerid')
+            ->setParameter('customerid', $customerId)
+            ->setFirstResult(($offset - 1) * $limit)
+            ->setMaxResults($limit);
+        return $qb->getQuery()->getResult();
+
+       
+    }
+
+    public function findByCustomerId($customerId) {
+        $qb = $this->createQueryBuilder('u')
+            ->where('u.customer = :customerId')
+            ->setParameter('customerId', $customerId);
+        return $qb->getQuery()->getResult();
+    }
+
+    public function findOneUser($customerId, $id) {
+        $qb = $this->createQueryBuilder('u')
+            ->where('u.customer = :customerId')
+            ->andWhere('u.id = :userId')
+            ->setParameters(array('customerId' => $customerId, 'userId' => $id));
+        return $qb->getQuery()->getResult();
+    }
+
+
 //    /**
 //     * @return User[] Returns an array of User objects
 //     */
