@@ -2,8 +2,11 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
+use Doctrine\ORM\EntityManager;
 use App\Repository\UserRepository;
 use App\Repository\CustomerRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,6 +16,7 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class UserController extends AbstractController
 {
@@ -62,6 +66,49 @@ class UserController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
    }
 
-   
+   #[Route('/api/users/{id}', name: 'deleteUser', methods: ['DELETE'])]
+    public function deleteUser(User $user, EntityManagerInterface $em): JsonResponse {
+
+        // On récupère le client car doit etre logué
+        $customer = $this->getUser();
+        // On récupère le client de cet utilisateur
+        $userCustomer = $user->getCustomer();
+       
+        // on vérifie que le client logué est bien celui de l'utilisateur
+        if ($userCustomer == $customer) {
+           $em->remove($user);
+           $em->flush();
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        }
+        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+   }
+
+   #[Route('/api/users', name: 'addUser', methods: ['POST'])]
+   public function addUser(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator): JsonResponse {
+
+        // On récupère le client car doit etre logué
+        $customer = $this->getUser();
+        // On récupère les données envoyées et on les déserialise
+        $user = $serializer->deserialize($request->getContent(), User::class, 'json');
+        // On passe le client
+        $user->setCustomer($customer);
+        // On recupère le mot de passe et on le hache
+        $hash = password_hash($user->getPassword(), PASSWORD_BCRYPT);
+        // On passe le mot de passe haché
+        $user->setPassword($hash);
+
+        $em->persist($user);
+        $em->flush();
+
+        // On sérialise le nv user pour l'afficher
+        $jsonUser= $serializer->serialize($user, 'json', ['groups' => 'getUsers']);
+        // On crée l'url pour afficher cet utilisateur
+        $location = $urlGenerator->generate('detailUser', ['id' => $user->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        return new JsonResponse($jsonUser, Response::HTTP_CREATED, ['location' => $location], true);
+       
+       
+  }
+
 
 }

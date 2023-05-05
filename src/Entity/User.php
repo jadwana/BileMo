@@ -27,6 +27,7 @@ class User
     private ?string $password = null;
 
     #[ORM\ManyToOne(inversedBy: 'user')]
+    #[ORM\JoinColumn(onDelete:"CASCADE")]
     #[Groups(["getUsers"])]
     #[ORM\JoinColumn(nullable: false)]
     private ?Customer $customer = null;
