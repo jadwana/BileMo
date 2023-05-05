@@ -14,9 +14,10 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class UserController extends AbstractController
 {
@@ -27,7 +28,7 @@ class UserController extends AbstractController
         $offset = $request->get('offset', 1);
         $limit = $request->get('limit', 3);
 
-        // $idCache = "getAllUsers-" . $offset . "-" . $limit;
+        $idCache = "getAllUsers-" . $offset . "-" . $limit;
         
         $customer = $this->getUser();
        
@@ -35,12 +36,12 @@ class UserController extends AbstractController
        
         if($customer){
             
-            // $userList = $cachePool->get($idCache, function(ItemInterface $item) use ($customerId, $offset, $limit, $userRepository){
-            //     echo ("L'ELEMENT N'EST PAS ENCORE EN CACHE !\n");
-            //     $item->tag("userCache");
-            //     return $userRepository->findByCustomerIdWithPagination($customerId, $offset, $limit);
-            // });
-            $userList =  $userRepository->findByCustomerIdWithPagination($customerId, $offset, $limit);
+            $userList = $cachePool->get($idCache, function(ItemInterface $item) use ($customerId, $offset, $limit, $userRepository){
+                echo ("L'ELEMENT N'EST PAS ENCORE EN CACHE !\n");
+                $item->tag("userCache");
+                // $item->expiresAfter(60);
+                return $userRepository->findByCustomerIdWithPagination($customerId, $offset, $limit);
+            });
     
             $jsonUserList = $serializer->serialize($userList, 'json', ['groups' => 'getUsers']);
             return new JsonResponse($jsonUserList, Response::HTTP_OK, ['accept' => 'json'], true);
@@ -67,7 +68,7 @@ class UserController extends AbstractController
    }
 
    #[Route('/api/users/{id}', name: 'deleteUser', methods: ['DELETE'])]
-    public function deleteUser(User $user, EntityManagerInterface $em): JsonResponse {
+    public function deleteUser(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse {
 
         // On récupère le client car doit etre logué
         $customer = $this->getUser();
@@ -78,18 +79,26 @@ class UserController extends AbstractController
         if ($userCustomer == $customer) {
            $em->remove($user);
            $em->flush();
+           // On vide le cache
+           $cachePool->invalidateTags(["userCache"]);
             return new JsonResponse(null, Response::HTTP_NO_CONTENT);
         }
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
    }
 
    #[Route('/api/users', name: 'addUser', methods: ['POST'])]
-   public function addUser(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator): JsonResponse {
+   public function addUser(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse {
 
         // On récupère le client car doit etre logué
         $customer = $this->getUser();
         // On récupère les données envoyées et on les déserialise
         $user = $serializer->deserialize($request->getContent(), User::class, 'json');
+
+        // On vérifie les erreurs
+        $errors = $validator->validate($user);
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
         // On passe le client
         $user->setCustomer($customer);
         // On recupère le mot de passe et on le hache
