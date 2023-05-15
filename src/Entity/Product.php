@@ -5,6 +5,28 @@ namespace App\Entity;
 use App\Repository\ProductRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Hateoas\Configuration\Annotation as Hateoas;
+
+/**
+ * @Hateoas\Relation(
+ *      "self",
+ *      href = @Hateoas\Route(
+ *          "detailProduct",
+ *          parameters = { "id" = "expr(object.getId())" }
+ *      ),
+ *     exclusion = @Hateoas\Exclusion(excludeIf = "expr(not is_granted('ROLE_CLIENT'))"), 
+ * )
+ *
+ *
+ * @Hateoas\Relation(
+ *      "AllProducts",
+ *      href = @Hateoas\Route(
+ *          "app_product"
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
+ * )
+ *
+ */
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 class Product
