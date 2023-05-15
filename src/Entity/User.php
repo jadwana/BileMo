@@ -4,10 +4,52 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\UserRepository;
-use Symfony\Component\Serializer\Annotation\Groups;
+use JMS\Serializer\Annotation\Groups;
+use Hateoas\Configuration\Annotation as Hateoas;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+
+/**
+ * @Hateoas\Relation(
+ *      "self",
+ *      href = @Hateoas\Route(
+ *          "detailUser",
+ *          parameters = { "id" = "expr(object.getId())" }
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getUsers, excludeIf = "expr(not is_granted('ROLE_CLIENT')")
+ * )
+ *
+ *
+ * @Hateoas\Relation(
+ *      "deleteUser",
+ *      href = @Hateoas\Route(
+ *          "deleteUser",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
+ * )
+ *
+ *
+ * @Hateoas\Relation(
+ *      "AllUsers",
+ *      href = @Hateoas\Route(
+ *          "deleteUser",
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
+ * )
+ * 
+ * 
+ */
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
+#[UniqueEntity(
+    fields: ['username'],
+    message: 'Cet utilisateur existe déjà',
+)]
+#[UniqueEntity(
+    fields: ['email'],
+    message: 'Cet utilisateur existe déjà',
+)]
 class User
 {
     #[ORM\Id]
