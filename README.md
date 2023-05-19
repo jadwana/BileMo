@@ -31,7 +31,8 @@ Expose APIs so that applications on other web platforms can perform operations:
 ## Set up your environment
 If you would like to install this project on your computer, you will first need to clone or download the repo of this project in a folder of your local server.
 ### Database configuration and access
-1 Update DATABASE_URL .env file with your database configuration. ex : DATABASE_URL=mysql://db_user:db_password@127.0.0.1:3306/db_name
+1 Update DATABASE_URL .env file with your database configuration. 
+  ex : DATABASE_URL=mysql://db_user:db_password@127.0.0.1:3306/db_name
 
 2 Create database : symfony console doctrine:database:create
 
@@ -41,6 +42,7 @@ If you would like to install this project on your computer, you will first need 
 
 ### Generate your keys for using JWT Token
 openssl genpkey -out config/jwt/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096
+
 openssl pkey -in config/jwt/private.pem -out config/jwt/public.pem-pubout
 
 ### Configure JWT PASSPHRASE in .env file
