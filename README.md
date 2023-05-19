@@ -3,13 +3,13 @@ This project is a part of my training with Openclassrooms : Application's develo
 
 ## Features
 
-* Expose APIs so that applications on other web platforms can perform operations:
-* - consult the list of BileMo products
-* - consult the details of a BileMo product
-* - consult the list of registered users linked to a client
-* - consult the details of a registered user linked to a client
-* - add a new user linked to a customer
-* - delete a user added by a customer
+Expose APIs so that applications on other web platforms can perform operations:
+ - consult the list of BileMo products
+ - consult the details of a BileMo product
+ - consult the list of registered users linked to a client
+ - consult the details of a registered user linked to a client
+ - add a new user linked to a customer
+ - delete a user added by a customer
 
 
 ### Specs
@@ -35,15 +35,16 @@ If you would like to install this project on your computer, you will first need 
 
 2 Create database : symfony console doctrine:database:create
 
-3 Create database structure : symfony console doctrine:migration:migrate
+3 Create database structure : symfony console doctrine:schema:update --force
 
-4 Insert fictive data(optional) : symfony console doctrine:fixtures:load
+4 Insert fictive data : symfony console doctrine:fixtures:load
 
-### Configure MAILER_DSN of Symfony mailer in .env file
-ex : MAILER_DSN=smtp://localhost:1025 if you want to use MailHog
+### Generate your keys for using JWT Token
+openssl genpkey -out config/jwt/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096
+openssl pkey -in config/jwt/private.pem -out config/jwt/public.pem-pubout
 
-### Configure JWT Secret in .env file
-ex : JWT_SECRET='xxx'
+### Configure JWT PASSPHRASE in .env file
+ex : JWT_PASSPHRASE='xxx'
 
 ## Start the project
 symfony server:start
@@ -51,12 +52,19 @@ symfony server:start
 ## Usage
 If you use fictive data, you can login with following account (which is a admin account) :
 
-* username : Jadwana
-* paswword : admin01
+* username : admin@mail.com
+* paswword : password
 
-If you did not use fictive data:
+Or with this account (wich is a customer account)
 
-* Create a user account with sign up form
-* Activate your account by following the activation link
+* username : customer1@mail.com
+* paswword : password
 
-### Congratulations, the SnowTricks project is now accessible at: localhost:8000
+Attention : You must generate a token befor using API
+
+### Congratulations, you can now test your API
+
+To view the online documentation and test the API go to the following address in your browser:
+http://127.0.0.1:8000/api/doc
+(you can also test with postman)
+
