@@ -1,16 +1,16 @@
 # BileMo
-Projet 7
+This project is a part of my training with Openclassrooms : Application's developper - PHP/Symfony.
+
 ## Features
 
-The website includes the following pages :
+* Expose APIs so that applications on other web platforms can perform operations:
+* - consult the list of BileMo products
+* - consult the details of a BileMo product
+* - consult the list of registered users linked to a client
+* - consult the details of a registered user linked to a client
+* - add a new user linked to a customer
+* - delete a user added by a customer
 
-* Homepage : display a list of all tricks. Each trick must include its name which is the link to the trick detail, a link to modify or delete this trick (only for connected user). And a link to add a new trick.
-* One trick : individual trick page with the trick name, featured picture, description of the trick headline,created at date, updated at date, comments & publish comment form (only for connected user)
-* Tricks management : add, modify or delete a trick
-* Profile page : user informations and link to change avatar and password
-*	Register / log forms
-* Reset password page
-* Navbar & footer present on all pages.
 
 ### Specs
 *	PHP 8
