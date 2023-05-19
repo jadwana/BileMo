@@ -2,9 +2,10 @@
 
 namespace App\Entity;
 
-use App\Repository\ProductRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\ProductRepository;
+use JMS\Serializer\Annotation\Groups;
 use Hateoas\Configuration\Annotation as Hateoas;
 
 /**
@@ -37,15 +38,19 @@ class Product
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["updateProduct"])]
     private ?string $name = null;
 
     #[ORM\Column]
+    #[Groups(["updateProduct"])]
     private ?float $price = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(["updateProduct"])]
     private ?string $description = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["updateProduct"])]
     private ?string $brand = null;
 
     public function getId(): ?int

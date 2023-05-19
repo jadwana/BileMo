@@ -16,29 +16,37 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  *          "detailUser",
  *          parameters = { "id" = "expr(object.getId())" }
  *      ),
- *      exclusion = @Hateoas\Exclusion(groups="getUsers, excludeIf = "expr(not is_granted('ROLE_CLIENT')")
+ *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
  * )
  *
  *
  * @Hateoas\Relation(
- *      "deleteUser",
+ *      "delete",
  *      href = @Hateoas\Route(
  *          "deleteUser",
  *          parameters = { "id" = "expr(object.getId())" },
  *      ),
  *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
  * )
- *
- *
+ * 
+ * 
  * @Hateoas\Relation(
- *      "AllUsers",
+ *      "allUsers",
  *      href = @Hateoas\Route(
- *          "deleteUser",
+ *          "allUsers",
+ *          
  *      ),
  *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
  * )
  * 
- * 
+ * @Hateoas\Relation(
+ *      "addUser",
+ *      href = @Hateoas\Route(
+ *          "addUser",
+ *          
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
+ * )
  */
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -59,16 +67,17 @@ class User
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getUsers"])]
+    #[Groups(["getUsers", "addUser", "updateUser"])]
     #[Assert\NotBlank(message: "Le pseudo de l'utilisateur est obligatoire")]
     private ?string $username = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getUsers"])]
+    #[Groups(["getUsers", "addUser", "updateUser"])]
     #[Assert\NotBlank(message: "L'email de l'utilisateur est obligatoire")]
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["addUser", "updateUser"])]
     #[Assert\NotBlank(message: "Le mot de passe de l'utilisateur est obligatoire")]
     private ?string $password = null;
 
