@@ -47,6 +47,13 @@ class AppFixtures extends Fixture
             $listCustomer[] = $customer;
         }
 
+        // Creation of admin
+        $customer = new Customer();
+        $customer->setEmail("admin@mail.com");
+        $customer->setRoles(["ROLE_ADMIN"]);
+        $customer->setPassword($this->PasswordHasher->hashPassword($customer, "password"));
+        $customer->setname("admin");
+        $manager->persist($customer);
 
         // Creation of users
         for ($i = 0; $i < 30; ++$i) {
