@@ -163,18 +163,18 @@ class ProductController extends AbstractController
      * @param  Product                $currentProduct
      * @param  SerializerInterface    $serializer
      * @param  Request                $request
-     * @param  EntitymanagerInterface $em
+     * @param  EntitymanagerInterface $manager
      * @param  ValidatorInterface     $validator
      * @param  TagAwareCacheInterface $cache
      * @return JsonResponse
      */
     #[Route('/api/products/{id}', name:"updateProduct", methods:['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour modifier un produit')]
-    public function updateBook(
+    public function updateProduct(
         Request $request, 
         SerializerInterface $serializer, 
         Product $currentProduct, 
-        EntityManagerInterface $em, 
+        EntityManagerInterface $manager, 
         ValidatorInterface $validator, 
         TagAwareCacheInterface $cache
     ): JsonResponse {
@@ -193,8 +193,8 @@ class ProductController extends AbstractController
             return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }      
         
-        $em->persist($currentProduct);
-        $em->flush();
+        $manager->persist($currentProduct);
+        $manager->flush();
 
         // On vide le cache. 
         $cache->invalidateTags(["productsCache"]);

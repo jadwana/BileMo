@@ -49,7 +49,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  *      "updateUser",
  *      href = @Hateoas\Route(
  *          "updateUser",
- *          
+ *          parameters = { "id" = "expr(object.getId())" }
  *      ),
  *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
  * )

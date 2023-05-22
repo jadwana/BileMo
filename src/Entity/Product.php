@@ -28,9 +28,10 @@ use Hateoas\Configuration\Annotation as Hateoas;
  * @Hateoas\Relation(
  *      "updateProduct",
  *      href = @Hateoas\Route(
- *          "updateProduct"
+ *          "updateProduct",
+ *          parameters = { "id" = "expr(object.getId())" }
  *      ),
- *      exclusion = @Hateoas\Exclusion(excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
+ *      exclusion = @Hateoas\Exclusion(excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
  * )
  */
 

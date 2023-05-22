@@ -189,13 +189,13 @@ class UserController extends AbstractController
       * )
       *@OA\Tag(name="Users")
       * @param  User                   $user
-      * @param  EntityManagerInterface $em
+      * @param  EntityManagerInterface $manager
       * @param  TagAwareCacheInterface $cachePool
       * @return JsonResponse
       */
     #[Route('/api/users/{id}', name: 'deleteUser', methods: ['DELETE'])]
     #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour accéder à cette liste d\'utilisateurs')]
-    public function deleteUser(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
+    public function deleteUser(User $user, EntityManagerInterface $manager, TagAwareCacheInterface $cachePool): JsonResponse
     {
 
         // On récupère le client car doit etre logué
@@ -205,8 +205,8 @@ class UserController extends AbstractController
        
         // On vérifie que le client logué est bien celui de l'utilisateur
         if ($userCustomer == $customer) {
-            $em->remove($user);
-            $em->flush();
+            $manager->remove($user);
+            $manager->flush();
             // On vide le cache
             $cachePool->invalidateTags(["userCache"]);
             return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -239,7 +239,7 @@ class UserController extends AbstractController
      *@OA\Tag(name="Users")
      * @param  Request                $request
      * @param  SerializerInterface    $serializer
-     * @param  EntityManagerInterface $em
+     * @param  EntityManagerInterface $manager
      * @param  UrlGeneratorInterface  $urlGenerator
      * @param  ValidatorInterface     $validator
      * @return JsonResponse
@@ -249,7 +249,7 @@ class UserController extends AbstractController
     public function addUser(
         Request $request, 
         SerializerInterface $serializer, 
-        EntityManagerInterface $em, 
+        EntityManagerInterface $manager, 
         UrlGeneratorInterface $urlGenerator, 
         ValidatorInterface $validator
         ): JsonResponse
@@ -272,8 +272,8 @@ class UserController extends AbstractController
         // On passe le mot de passe haché
         $user->setPassword($hash);
 
-        $em->persist($user);
-        $em->flush();
+        $manager->persist($user);
+        $manager->flush();
 
         // On sérialise le nv user pour l'afficher
         $context = SerializationContext::create()->setGroups(['getUsers']);
@@ -310,7 +310,7 @@ class UserController extends AbstractController
      * @OA\Tag(name="Users")
      * @param  Request                $request
      * @param  SerializerInterface    $serializer
-     * @param  EntityManagerInterface $em
+     * @param  EntityManagerInterface $manager
      * @param  User                   $currentUser
      * @param  ValidatorInterface     $validator
      * @param  TagAwareCacheInterface $cache 
@@ -321,7 +321,7 @@ class UserController extends AbstractController
         Request $request, 
         SerializerInterface $serializer, 
         User $currentUser, 
-        EntityManagerInterface $em, 
+        EntityManagerInterface $manager, 
         ValidatorInterface $validator, 
         TagAwareCacheInterface $cache
         ): JsonResponse 
@@ -346,8 +346,8 @@ class UserController extends AbstractController
                 return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
             }      
             
-            $em->persist($currentUser);
-            $em->flush();
+            $manager->persist($currentUser);
+            $manager->flush();
     
             // On vide le cache. 
             $cache->invalidateTags(["userCache"]);
