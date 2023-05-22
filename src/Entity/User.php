@@ -19,7 +19,6 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
  * )
  *
- *
  * @Hateoas\Relation(
  *      "delete",
  *      href = @Hateoas\Route(
@@ -28,8 +27,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  *      ),
  *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
  * )
- * 
- * 
+ *
  * @Hateoas\Relation(
  *      "allUsers",
  *      href = @Hateoas\Route(
@@ -43,6 +41,14 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  *      "addUser",
  *      href = @Hateoas\Route(
  *          "addUser",
+ *          
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
+ * )
+ * @Hateoas\Relation(
+ *      "updateUser",
+ *      href = @Hateoas\Route(
+ *          "updateUser",
  *          
  *      ),
  *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),

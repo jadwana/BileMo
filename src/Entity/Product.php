@@ -18,15 +18,20 @@ use Hateoas\Configuration\Annotation as Hateoas;
  *     exclusion = @Hateoas\Exclusion(excludeIf = "expr(not is_granted('ROLE_CLIENT'))"), 
  * )
  *
- *
  * @Hateoas\Relation(
- *      "AllProducts",
+ *      "allProducts",
  *      href = @Hateoas\Route(
  *          "app_product"
  *      ),
  *      exclusion = @Hateoas\Exclusion(excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
  * )
- *
+ * @Hateoas\Relation(
+ *      "updateProduct",
+ *      href = @Hateoas\Route(
+ *          "updateProduct"
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
+ * )
  */
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]

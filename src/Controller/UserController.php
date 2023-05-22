@@ -25,7 +25,9 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 
 class UserController extends AbstractController
-{   
+{
+
+   
     /**
      * This method is used to recover all users of a customer with pagination
      *
@@ -64,15 +66,21 @@ class UserController extends AbstractController
      * )
      *@OA\Tag(name="Users")
      * 
-     * @param UserRepository $userRepository
-     * @param SerializerInterface $serializer
-     * @param Request $request
-     * @param TagAwareCacheInterface $cachePool
+     * @param  UserRepository         $userRepository
+     * @param  SerializerInterface    $serializer
+     * @param  Request                $request
+     * @param  TagAwareCacheInterface $cachePool
+     * 
      * @return JsonResponse
      */
     #[Route('/api/users', name: 'allUsers', methods:['GET'])]
     #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour accéder à cette liste d\'utilisateurs')]
-    public function getProductList(UserRepository $userRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
+    public function getProductList(
+        UserRepository $userRepository, 
+        SerializerInterface $serializer, 
+        Request $request, 
+        TagAwareCacheInterface $cachePool
+        ): JsonResponse
     {
        
         $page = $request->query->getInt('page', 1); 
@@ -84,27 +92,29 @@ class UserController extends AbstractController
         if ($customer) {
             $customerId = $customer->getId();
             
-            $jsonUserList = $cachePool->get($idCache, 
+            $jsonUserList = $cachePool->get(
+                $idCache, 
                 function (ItemInterface $item) use ($userRepository, $page, $limit, $serializer, $customerId) {
-                echo ("L'ELEMENT N'EST PAS ENCORE EN CACHE !\n");
-                $item->tag("usersCache");
-                $query = $userRepository->findByCustomerId($customerId);
-                $userAdapter = new QueryAdapter($query);
-                $pagerfanta = new Pagerfanta($userAdapter);
-                $pagerfanta->setMaxPerPage($limit);
-                $pagerfanta->setCurrentPage($page);
+                    // echo ("L'ELEMENT N'EST PAS ENCORE EN CACHE !\n");
+                    $item->tag("usersCache");
+                    $query = $userRepository->findByCustomerId($customerId);
+                    $userAdapter = new QueryAdapter($query);
+                    $pagerfanta = new Pagerfanta($userAdapter);
+                    $pagerfanta->setMaxPerPage($limit);
+                    $pagerfanta->setCurrentPage($page);
     
-                $userList = $pagerfanta->getCurrentPageResults();
+                    $userList = $pagerfanta->getCurrentPageResults();
 
-                $context = SerializationContext::create()->setGroups(['getUsers']);
-                return $serializer->serialize($userList, 'json', $context);
-            });
+                    $context = SerializationContext::create()->setGroups(['getUsers']);
+                    return $serializer->serialize($userList, 'json', $context);
+                }
+            );
 
-        return new JsonResponse($jsonUserList, Response::HTTP_OK, ['Content-Type' => 'application/json'], true);
+            return new JsonResponse($jsonUserList, Response::HTTP_OK, ['Content-Type' => 'application/json'], true);
             
         }
 
-    return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
 
     }
 
@@ -130,14 +140,15 @@ class UserController extends AbstractController
      *     description = "Forbidden access to this content"
      * )
      *@OA\Tag(name="Users")
-     * @param UserRepository $userRepository
-     * @param SerializerInterface $serializer
-     * @param int $id
-     * @return JsonResponse
+     * @param                   UserRepository      $userRepository
+     * @param                   SerializerInterface $serializer
+     * @param                   int                 $id
+     * @return                  JsonResponse
      */
-   #[Route('/api/users/{id}', name: 'detailUser', methods: ['GET'])]
-   #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour accéder à cette liste d\'utilisateurs')]
-    public function getDetailUser(int $id, SerializerInterface $serializer, UserRepository $userRepository): JsonResponse {
+    #[Route('/api/users/{id}', name: 'detailUser', methods: ['GET'])]
+    #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour accéder à cette liste d\'utilisateurs')]
+    public function getDetailUser(int $id, SerializerInterface $serializer, UserRepository $userRepository): JsonResponse
+    {
 
         // On récupère le client car doit etre logué
         $customer = $this->getUser();
@@ -152,39 +163,40 @@ class UserController extends AbstractController
             return new JsonResponse($jsonUser, Response::HTTP_OK, [], true);
         }
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
-   }
+    }
 
 
-   /**
-     * This method is used to delete the detail of a user of a customer
-     * 
-     * @OA\Response(
-     *     response=204,
-     *     description="Delete a user",
-     *     @Model(type=User::class)
-     *     )
-     * )
-     * @OA\Response(
-     *     response=404,
-     *     description="Resource does not exist"
-     * )
-     * @OA\Response(
-     *     response=401,
-     *     description="Authenticated failed / invalid token"
-     * )
-     *  @OA\Response(
-     *     response = 403,
-     *     description = "Forbidden access to this content"
-     * )
-     *@OA\Tag(name="Users")
-     * @param User $user
-     * @param EntityManagerInterface $em
-     * @param TagAwareCacheInterface $cachePool
-     * @return JsonResponse
-     */
-   #[Route('/api/users/{id}', name: 'deleteUser', methods: ['DELETE'])]
-   #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour accéder à cette liste d\'utilisateurs')]
-    public function deleteUser(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse {
+    /**
+      * This method is used to delete the detail of a user of a customer
+      * 
+      * @OA\Response(
+      *     response=204,
+      *     description="Delete a user",
+      *     @Model(type=User::class)
+      *     )
+      * )
+      * @OA\Response(
+      *     response=404,
+      *     description="Resource does not exist"
+      * )
+      * @OA\Response(
+      *     response=401,
+      *     description="Authenticated failed / invalid token"
+      * )
+      *  @OA\Response(
+      *     response = 403,
+      *     description = "Forbidden access to this content"
+      * )
+      *@OA\Tag(name="Users")
+      * @param  User                   $user
+      * @param  EntityManagerInterface $em
+      * @param  TagAwareCacheInterface $cachePool
+      * @return JsonResponse
+      */
+    #[Route('/api/users/{id}', name: 'deleteUser', methods: ['DELETE'])]
+    #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour accéder à cette liste d\'utilisateurs')]
+    public function deleteUser(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
+    {
 
         // On récupère le client car doit etre logué
         $customer = $this->getUser();
@@ -193,47 +205,55 @@ class UserController extends AbstractController
        
         // On vérifie que le client logué est bien celui de l'utilisateur
         if ($userCustomer == $customer) {
-           $em->remove($user);
-           $em->flush();
-           // On vide le cache
-           $cachePool->invalidateTags(["userCache"]);
+            $em->remove($user);
+            $em->flush();
+            // On vide le cache
+            $cachePool->invalidateTags(["userCache"]);
             return new JsonResponse(null, Response::HTTP_NO_CONTENT);
         }
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
-   }
+    }
 
 
-   /**
-    * This method is used to add a user of a customer
-    * @OA\Response(
-     *     response=201,
-     *     description="Add a new user",
-     *     @Model(type=User::class)
-     *     )
-     * )
-     * @OA\RequestBody(@Model(type=User::class, groups={"addUser"}))
+    /**
+     * This method is used to add a user of a customer
      *
      * @OA\Response(
-     *     response=401,
-     *     description="Authenticated failed / invalid token"
-     * )
-     * 
-     * @OA\Response(
-     *     response = 403,
-     *     description = "Forbidden access to this content"
-     * )
-     * 
-    *@OA\Tag(name="Users")
-    * @param Request $request
-    * @param SerializerInterface $serializer
-    * @param EntityManagerInterface $em
-    * @param UrlGeneratorInterface $urlGenerator
-    * @param ValidatorInterface $validator
-    * @return JsonResponse
-    */
+      *     response=201,
+      *     description="Add a new user",
+      *     @Model(type=User::class)
+      *     )
+      * )
+      * @OA\RequestBody(@Model(type=User::class, groups={"addUser"}))
+      *
+      * @OA\Response(
+      *     response=401,
+      *     description="Authenticated failed / invalid token"
+      * )
+      * 
+      * @OA\Response(
+      *     response = 403,
+      *     description = "Forbidden access to this content"
+      * )
+      * 
+     *@OA\Tag(name="Users")
+     * @param  Request                $request
+     * @param  SerializerInterface    $serializer
+     * @param  EntityManagerInterface $em
+     * @param  UrlGeneratorInterface  $urlGenerator
+     * @param  ValidatorInterface     $validator
+     * @return JsonResponse
+     */
     #[Route('/api/users', name: 'addUser', methods: ['POST'])]
     #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour ajouter un utilisateur')]
-    public function addUser(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse {
+    public function addUser(
+        Request $request, 
+        SerializerInterface $serializer, 
+        EntityManagerInterface $em, 
+        UrlGeneratorInterface $urlGenerator, 
+        ValidatorInterface $validator
+        ): JsonResponse
+    {
 
         // On récupère le client car doit etre logué
         $customer = $this->getUser();
@@ -263,7 +283,6 @@ class UserController extends AbstractController
 
         return new JsonResponse($jsonUser, Response::HTTP_CREATED, ['location' => $location], true);
        
-       
     }
 
 
@@ -289,16 +308,23 @@ class UserController extends AbstractController
      *     description = "Forbidden access to this content"
      * )
      * @OA\Tag(name="Users")
-     * @param Request $request
-     * @param SerializerInterface $serializer
-     * @param EntityManagerInterface $em
-     * @param User $currentUser
-     * @param ValidatorInterface $validator
-     * @param TagAwareCacheInterface $cache 
+     * @param  Request                $request
+     * @param  SerializerInterface    $serializer
+     * @param  EntityManagerInterface $em
+     * @param  User                   $currentUser
+     * @param  ValidatorInterface     $validator
+     * @param  TagAwareCacheInterface $cache 
      * @return JsonResponse
      */
     #[Route('/api/users/{id}', name:"updateUser", methods:['PUT'])]
-    public function updateBook(Request $request, SerializerInterface $serializer, User $currentUser, EntityManagerInterface $em, ValidatorInterface $validator, TagAwareCacheInterface $cache): JsonResponse 
+    public function updateBook(
+        Request $request, 
+        SerializerInterface $serializer, 
+        User $currentUser, 
+        EntityManagerInterface $em, 
+        ValidatorInterface $validator, 
+        TagAwareCacheInterface $cache
+        ): JsonResponse 
     {
         // On récupère le client car doit etre logué
         $customer = $this->getUser();

@@ -30,8 +30,7 @@ class AppFixtures extends Fixture
             $product->setName(ucfirst($faker->word()))
                 ->setPrice($faker->randomFloat(2, 8, 5000))
                 ->setBrand($faker->company())
-                ->setDescription($faker->text())
-            ;
+                ->setDescription($faker->text());
             $manager->persist($product);
         }
 

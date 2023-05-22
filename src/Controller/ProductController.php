@@ -59,34 +59,41 @@ class ProductController extends AbstractController
      *     response = 403,
      *     description = "Forbidden access to this content"
      * )
-     *@OA\Tag(name="Products")
-     * @param ProductRepository $productRepository
-     * @param SerializerInterface $serializer
-     * @param Request $request
-     * @param TagAwareCacheInterface $cachePool
+     * @OA\Tag(name="Products")
+     *
+     * @param  ProductRepository      $productRepository
+     * @param  SerializerInterface    $serializer
+     * @param  Request                $request
+     * @param  TagAwareCacheInterface $cachePool
      * @return JsonResponse
      */
     #[Route('/api/products', name: 'app_product', methods: ['GET'])]
     #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour accéder à cette liste de produits')]
-    public function getProductList(ProductRepository $productRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
-    {
+    public function getProductList(
+        ProductRepository $productRepository, 
+        SerializerInterface $serializer, 
+        Request $request, 
+        TagAwareCacheInterface $cachePool
+    ): JsonResponse {
         $limit = $request->get('limit', 3);
         $page = $request->query->getInt('page', 1);
         $idCache = "getAllProducts-" . $page . "-" . $limit;
         
-        $jsonProductList = $cachePool->get($idCache, 
-        function (ItemInterface $item) use ($productRepository, $page, $limit, $serializer) {
-        echo ("L'ELEMENT N'EST PAS ENCORE EN CACHE !\n");
-        $item->tag("ProductsCache");
-        $productAdapter = new QueryAdapter($productRepository->createQueryBuilder('p'));
-        $pagerfanta = new Pagerfanta($productAdapter);
-        $pagerfanta->setMaxPerPage($limit);
-        $pagerfanta->setCurrentPage($page);
+        $jsonProductList = $cachePool->get(
+            $idCache, 
+            function (ItemInterface $item) use ($productRepository, $page, $limit, $serializer) {
+                // echo ("L'ELEMENT N'EST PAS ENCORE EN CACHE !\n");
+                $item->tag("ProductsCache");
+                $productAdapter = new QueryAdapter($productRepository->createQueryBuilder('p'));
+                $pagerfanta = new Pagerfanta($productAdapter);
+                $pagerfanta->setMaxPerPage($limit);
+                $pagerfanta->setCurrentPage($page);
 
-        $productList = $pagerfanta->getCurrentPageResults();
+                $productList = $pagerfanta->getCurrentPageResults();
         
-        return $serializer->serialize($productList, 'json');
-    });
+                return $serializer->serialize($productList, 'json');
+            }
+        );
 
 
 
@@ -115,8 +122,9 @@ class ProductController extends AbstractController
      *     description = "Forbidden access to this content"
      * )
      * @OA\Tag(name="Products")
-     * @param Product $product
-     * @param SerializerInterface $serializer
+     * 
+     * @param  Product             $product
+     * @param  SerializerInterface $serializer
      * @return JsonResponse
      */
     #[Route('/api/products/{id}', name: 'detailProduct', methods: ['GET'])]
@@ -151,19 +159,29 @@ class ProductController extends AbstractController
      *     description = "Forbidden access to this content"
      * )
      * @OA\Tag(name="Products")
-     * @param Product $currentProduct
-     * @param SerializerInterface $serializer
-     * @param Request $request
-     * @param EntitymanagerInterface $em
-     * @param ValidatorInterface $validator
-     * @param TagAwareCacheInterface $cache
+     * 
+     * @param  Product                $currentProduct
+     * @param  SerializerInterface    $serializer
+     * @param  Request                $request
+     * @param  EntitymanagerInterface $em
+     * @param  ValidatorInterface     $validator
+     * @param  TagAwareCacheInterface $cache
      * @return JsonResponse
      */
     #[Route('/api/products/{id}', name:"updateProduct", methods:['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour modifier un produit')]
-    public function updateBook(Request $request, SerializerInterface $serializer, Product $currentProduct, EntityManagerInterface $em, ValidatorInterface $validator, TagAwareCacheInterface $cache): JsonResponse 
-    {
-        $newProduct = $serializer->deserialize($request->getContent(), Product::class, 'json');
+    public function updateBook(
+        Request $request, 
+        SerializerInterface $serializer, 
+        Product $currentProduct, 
+        EntityManagerInterface $em, 
+        ValidatorInterface $validator, 
+        TagAwareCacheInterface $cache
+    ): JsonResponse {
+
+        $newProduct = $serializer->deserialize(
+            $request->getContent(), Product::class, 'json'
+        );
         $currentProduct->setName($newProduct->getName());
         $currentProduct->setPrice($newProduct->getPrice());
         $currentProduct->setDescription($newProduct->getDescription());
