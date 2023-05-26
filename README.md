@@ -1,6 +1,8 @@
 # BileMo
 This project is a part of my training with Openclassrooms : Application's developper - PHP/Symfony.
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/558abb43ead04e1f846a9253070acd2c)](https://app.codacy.com/gh/jadwana/BileMo/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+
 ## Features
 
 Expose APIs so that applications on other web platforms can perform operations:
