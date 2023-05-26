@@ -17,6 +17,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -64,7 +65,7 @@ class ProductController extends AbstractController
      * @param  ProductRepository      $productRepository
      * @param  SerializerInterface    $serializer
      * @param  Request                $request
-     * @param  TagAwareCacheInterface $cachePool
+     * @param  TagAwareCacheInterface $cache
      * @return JsonResponse
      */
     #[Route('/api/products', name: 'app_product', methods: ['GET'])]
@@ -73,17 +74,18 @@ class ProductController extends AbstractController
         ProductRepository $productRepository, 
         SerializerInterface $serializer, 
         Request $request, 
-        TagAwareCacheInterface $cachePool
+        TagAwareCacheInterface $cache
     ): JsonResponse {
         $limit = $request->get('limit', 3);
         $page = $request->query->getInt('page', 1);
         $idCache = "getAllProducts-" . $page . "-" . $limit;
         
-        $jsonProductList = $cachePool->get(
+        $jsonProductList = $cache->get(
             $idCache, 
             function (ItemInterface $item) use ($productRepository, $page, $limit, $serializer) {
                 // echo ("L'ELEMENT N'EST PAS ENCORE EN CACHE !\n");
-                $item->tag("ProductsCache");
+                $item->tag("productsCache");
+                $item->expiresAfter(60);
                 $productAdapter = new QueryAdapter($productRepository->createQueryBuilder('p'));
                 $pagerfanta = new Pagerfanta($productAdapter);
                 $pagerfanta->setMaxPerPage($limit);
@@ -175,7 +177,8 @@ class ProductController extends AbstractController
         SerializerInterface $serializer, 
         Product $currentProduct, 
         EntityManagerInterface $manager, 
-        ValidatorInterface $validator, 
+        ValidatorInterface $validator,
+        UrlGeneratorInterface $urlGenerator,
         TagAwareCacheInterface $cache
     ): JsonResponse {
 
@@ -187,7 +190,7 @@ class ProductController extends AbstractController
         $currentProduct->setDescription($newProduct->getDescription());
         $currentProduct->setBrand($newProduct->getBrand());
 
-        // On vérifie les erreurs
+        // We check for errors
         $errors = $validator->validate($currentProduct);
         if ($errors->count() > 0) {
             return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
@@ -196,10 +199,18 @@ class ProductController extends AbstractController
         $manager->persist($currentProduct);
         $manager->flush();
 
-        // On vide le cache. 
+        // We empty the cache 
         $cache->invalidateTags(["productsCache"]);
 
-        return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+        // We serialize the modified user to display it
+        // $context = SerializationContext::create()->setGroups(['getUsers']);
+        $jsonUser= $serializer->serialize($currentProduct, 'json');
+        // We create the url to display this user
+        $location = $urlGenerator->generate('detailUser', ['id' => $currentProduct->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        return new JsonResponse($jsonUser, Response::HTTP_OK, ['location' => $location], true);
+
+       
     }
 
 }

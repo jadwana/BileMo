@@ -26,7 +26,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class UserController extends AbstractController
 {
-
    
     /**
      * This method is used to recover all users of a customer with pagination
@@ -69,17 +68,17 @@ class UserController extends AbstractController
      * @param  UserRepository         $userRepository
      * @param  SerializerInterface    $serializer
      * @param  Request                $request
-     * @param  TagAwareCacheInterface $cachePool
+     * @param  TagAwareCacheInterface $cache
      * 
      * @return JsonResponse
      */
     #[Route('/api/users', name: 'allUsers', methods:['GET'])]
     #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour accéder à cette liste d\'utilisateurs')]
-    public function getProductList(
+    public function getUserList(
         UserRepository $userRepository, 
         SerializerInterface $serializer, 
         Request $request, 
-        TagAwareCacheInterface $cachePool
+        TagAwareCacheInterface $cache
         ): JsonResponse
     {
        
@@ -92,11 +91,12 @@ class UserController extends AbstractController
         if ($customer) {
             $customerId = $customer->getId();
             
-            $jsonUserList = $cachePool->get(
+            $jsonUserList = $cache->get(
                 $idCache, 
                 function (ItemInterface $item) use ($userRepository, $page, $limit, $serializer, $customerId) {
                     // echo ("L'ELEMENT N'EST PAS ENCORE EN CACHE !\n");
                     $item->tag("usersCache");
+                    $item->expiresAfter(60);
                     $query = $userRepository->findByCustomerId($customerId);
                     $userAdapter = new QueryAdapter($query);
                     $pagerfanta = new Pagerfanta($userAdapter);
@@ -150,11 +150,11 @@ class UserController extends AbstractController
     public function getDetailUser(int $id, SerializerInterface $serializer, UserRepository $userRepository): JsonResponse
     {
 
-        // On récupère le client car doit etre logué
+        // We retrieve the customer because must be logged in
         $customer = $this->getUser();
-        // On récupère l'ID du client
+        // We get the customer's ID
         $customerId = $customer->getId();
-        // On récupère l'utilisateur
+        // We get the user
         $user = $userRepository->findOneUser($customerId, $id);
        
         if ($user) {
@@ -171,8 +171,8 @@ class UserController extends AbstractController
       * 
       * @OA\Response(
       *     response=204,
-      *     description="Delete a user",
-      *     @Model(type=User::class)
+      *     description="Delete a user"
+      *    
       *     )
       * )
       * @OA\Response(
@@ -190,25 +190,25 @@ class UserController extends AbstractController
       *@OA\Tag(name="Users")
       * @param  User                   $user
       * @param  EntityManagerInterface $manager
-      * @param  TagAwareCacheInterface $cachePool
+      * @param  TagAwareCacheInterface $cache
       * @return JsonResponse
       */
     #[Route('/api/users/{id}', name: 'deleteUser', methods: ['DELETE'])]
     #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour accéder à cette liste d\'utilisateurs')]
-    public function deleteUser(User $user, EntityManagerInterface $manager, TagAwareCacheInterface $cachePool): JsonResponse
+    public function deleteUser(User $user, EntityManagerInterface $manager, TagAwareCacheInterface $cache): JsonResponse
     {
 
-        // On récupère le client car doit etre logué
+        // We retrieve the customer because must be logged in
         $customer = $this->getUser();
-        // On récupère le client de cet utilisateur
+        // We retrieve the customer of this user
         $userCustomer = $user->getCustomer();
        
-        // On vérifie que le client logué est bien celui de l'utilisateur
+        // We check that the customer logged in is that of the user
         if ($userCustomer == $customer) {
             $manager->remove($user);
             $manager->flush();
-            // On vide le cache
-            $cachePool->invalidateTags(["userCache"]);
+            // We empty the cache
+            $cache->invalidateTags(["usersCache"]);
             return new JsonResponse(null, Response::HTTP_NO_CONTENT);
         }
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
@@ -242,6 +242,7 @@ class UserController extends AbstractController
      * @param  EntityManagerInterface $manager
      * @param  UrlGeneratorInterface  $urlGenerator
      * @param  ValidatorInterface     $validator
+     * @param  TagAwareCacheInterface $cache
      * @return JsonResponse
      */
     #[Route('/api/users', name: 'addUser', methods: ['POST'])]
@@ -251,34 +252,38 @@ class UserController extends AbstractController
         SerializerInterface $serializer, 
         EntityManagerInterface $manager, 
         UrlGeneratorInterface $urlGenerator, 
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        TagAwareCacheInterface $cache
         ): JsonResponse
     {
 
-        // On récupère le client car doit etre logué
+        // We retrieve the customer because must be logged in
         $customer = $this->getUser();
-        // On récupère les données envoyées et on les déserialise
+        // We recover the data sent and we deserialize them
         $user = $serializer->deserialize($request->getContent(), User::class, 'json');
 
-        // On vérifie les erreurs
+        // We check for errors
         $errors = $validator->validate($user);
         if ($errors->count() > 0) {
             return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }
-        // On passe le client
+        // We pass the customer
         $user->setCustomer($customer);
-        // On recupère le mot de passe et on le hache
+        // We recover the password and we hash it
         $hash = password_hash($user->getPassword(), PASSWORD_BCRYPT);
-        // On passe le mot de passe haché
+        // We pass the hashed password
         $user->setPassword($hash);
 
         $manager->persist($user);
         $manager->flush();
 
-        // On sérialise le nv user pour l'afficher
+        // We empty the cache. 
+        $cache->invalidateTags(["usersCache"]);
+
+        // We serialize the new user to display it
         $context = SerializationContext::create()->setGroups(['getUsers']);
         $jsonUser= $serializer->serialize($user, 'json', $context);
-        // On crée l'url pour afficher cet utilisateur
+        // We create the url to display this user
         $location = $urlGenerator->generate('detailUser', ['id' => $user->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return new JsonResponse($jsonUser, Response::HTTP_CREATED, ['location' => $location], true);
@@ -290,7 +295,7 @@ class UserController extends AbstractController
      * This method is used to update a user of a customer
      * 
      * @OA\Response(
-     *     response=204,
+     *     response=200,
      *     description="The user has been updated"
      *     )
      * @OA\RequestBody(@Model(type=User::class, groups={"updateUser"}))
@@ -317,18 +322,19 @@ class UserController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/users/{id}', name:"updateUser", methods:['PUT'])]
-    public function updateBook(
+    public function updateUser(
         Request $request, 
         SerializerInterface $serializer, 
         User $currentUser, 
         EntityManagerInterface $manager, 
         ValidatorInterface $validator, 
-        TagAwareCacheInterface $cache
+        TagAwareCacheInterface $cache,
+        UrlGeneratorInterface $urlGenerator
         ): JsonResponse 
     {
-        // On récupère le client car doit etre logué
+        // We retrieve the customer because must be logged in
         $customer = $this->getUser();
-        // On récupère le client de cet utilisateur
+        // We retrieve the customer of this user
         $userCustomer = $currentUser->getCustomer();
 
         if ($userCustomer == $customer) {
@@ -337,10 +343,10 @@ class UserController extends AbstractController
             $currentUser->setUsername($newUser->getUsername());
             $currentUser->setEmail($newUser->getEmail());
             $hash = password_hash($newUser->getPassword(), PASSWORD_BCRYPT);
-            // On passe le mot de passe haché
+            // We pass the hashed password
             $currentUser->setPassword($hash);
     
-            // On vérifie les erreurs
+            // We check for errors
             $errors = $validator->validate($currentUser);
             if ($errors->count() > 0) {
                 return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
@@ -349,10 +355,17 @@ class UserController extends AbstractController
             $manager->persist($currentUser);
             $manager->flush();
     
-            // On vide le cache. 
-            $cache->invalidateTags(["userCache"]);
+            // We empty the cache. 
+            $cache->invalidateTags(["usersCache"]);
+
+            // We serialize the modified user to display it
+            $context = SerializationContext::create()->setGroups(['getUsers']);
+            $jsonUser= $serializer->serialize($currentUser, 'json', $context);
+            // We create the url to display this user
+            $location = $urlGenerator->generate('detailUser', ['id' => $currentUser->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+
+            return new JsonResponse($jsonUser, Response::HTTP_OK, ['location' => $location], true);
     
-            return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
         }
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
     }

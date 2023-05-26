@@ -124,7 +124,7 @@ class Customer implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
     /**
-     * Méthode getUsername qui permet de retourner le champ qui est utilisé pour l'authentification.
+     * getUsername method that returns the field that is used for authentication.
      *
      * @return string
      */
